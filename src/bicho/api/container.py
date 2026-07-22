@@ -24,6 +24,7 @@ from bicho.infrastructure.github.auth import GitHubAppAuth
 from bicho.infrastructure.github.client import GitHubClient
 from bicho.infrastructure.ids import UuidGenerator
 from bicho.infrastructure.language.generic import GenericAdapter
+from bicho.infrastructure.language.python_adapter import PythonAdapter
 from bicho.infrastructure.language.registry import AdapterRegistry
 from bicho.infrastructure.model.registry import ModelSpec, build_model_provider
 from bicho.infrastructure.process.subprocess_runner import AsyncSubprocessRunner
@@ -74,7 +75,7 @@ class Container:
             graph=build_graph(list(analyzers)),
             github=self._github(installation_id),
             diff_parser=DiffParser(),
-            adapters=AdapterRegistry([], fallback=GenericAdapter()),
+            adapters=AdapterRegistry([PythonAdapter()], fallback=GenericAdapter()),
             analyzers=analyzers,
             ids=self._ids,
         )
