@@ -60,6 +60,17 @@ curl -X POST localhost:8000/reviews \
 
 Configuration is via `BICHO_*` environment variables — see [.env.example](.env.example).
 
+Or run the whole thing (with the Semgrep + pip-audit binaries baked in) via Docker — no database or
+broker, just one service:
+
+```bash
+cp .env.example .env            # then fill in real credentials
+docker compose up --build       # serves on :8000; GET /readyz, /version
+```
+
+Webhooks need a public URL — expose `:8000` with a tunnel (cloudflared/ngrok) or deploy to Railway;
+`POST /reviews` works directly.
+
 ## Documentation
 
 - [AGENTS.md](AGENTS.md) — contributor/agent guide and the source of truth for how this repo is built.

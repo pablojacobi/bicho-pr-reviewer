@@ -16,14 +16,27 @@ COPY pyproject.toml uv.lock ./
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-install-project --no-dev
 
-# Then the project source.
+# Then the project source and the shipped Semgrep rules.
 COPY src ./src
+COPY resources ./resources
 COPY README.md ./
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-dev
 
 # ---- runtime: minimal, non-root ----
 FROM python:3.14-slim AS runtime
+
+COPY --from=ghcr.io/astral-sh/uv:0.11.8 /uv /uvx /bin/
+
+# Deterministic scanners installed as ISOLATED tools (kept out of the app venv to avoid dependency
+# conflicts), with their CLIs exposed on PATH for all users. Disable via BICHO_SCANNER__*_ENABLED
+# to run without them.
+ENV UV_TOOL_DIR=/opt/uv/tools \
+    UV_TOOL_BIN_DIR=/usr/local/bin \
+    UV_PYTHON_DOWNLOADS=never
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv tool install "semgrep==1.170.1" && \
+    uv tool install "pip-audit"
 
 RUN groupadd --system bicho && useradd --system --gid bicho --home-dir /app bicho
 
