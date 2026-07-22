@@ -6,6 +6,14 @@ from collections.abc import Callable, Iterator
 import pytest
 import structlog
 
+from bicho.domain.models.diff import (
+    DiffHunk,
+    DiffLine,
+    DiffLineKind,
+    FileChangeKind,
+    FileDiff,
+    NormalizedDiff,
+)
 from bicho.domain.models.finding import Category, Confidence, Finding, Severity, SourceKind
 
 
@@ -52,3 +60,23 @@ def make_finding() -> Callable[..., Finding]:
         return Finding.model_validate(data)
 
     return _make
+
+
+@pytest.fixture
+def sample_diff() -> NormalizedDiff:
+    """A small diff for app/db.py: commentable RIGHT lines {10, 11, 12}, LEFT lines {10, 11}."""
+    hunk = DiffHunk(
+        old_start=10,
+        old_count=2,
+        new_start=10,
+        new_count=3,
+        lines=(
+            DiffLine(kind=DiffLineKind.CONTEXT, content="ctx", old_line=10, new_line=10),
+            DiffLine(kind=DiffLineKind.REMOVED, content="old", old_line=11),
+            DiffLine(kind=DiffLineKind.ADDED, content="new_a", new_line=11),
+            DiffLine(kind=DiffLineKind.ADDED, content="new_b", new_line=12),
+        ),
+    )
+    return NormalizedDiff(
+        files=(FileDiff(path="app/db.py", change_kind=FileChangeKind.MODIFIED, hunks=(hunk,)),)
+    )
