@@ -17,7 +17,6 @@ from bicho.domain.ports.diff_parser import DiffParserPort
 from bicho.domain.ports.github import GitHubPort
 from bicho.domain.ports.language_adapter import LanguageAdapter
 from bicho.domain.services.dedup import deduplicate
-from bicho.domain.services.verification_policy import verify
 
 _CHANGE_KIND = {
     "added": FileChangeKind.ADDED,
@@ -102,8 +101,12 @@ def route_analyzers(state: ReviewState) -> list[str]:
     return selected if selected else ["collect_findings"]
 
 
-def verify_findings(state: ReviewState, runtime: Runtime[ReviewContext]) -> dict[str, object]:
-    verified = [verify(finding) for finding in state.get("findings", [])]
+async def verify_findings(state: ReviewState, runtime: Runtime[ReviewContext]) -> dict[str, object]:
+    verified = await runtime.context.verifier.verify(
+        state.get("findings", []),
+        diff=state["diff"],
+        correlation_id=runtime.context.correlation_id,
+    )
     return {"findings": verified}
 
 

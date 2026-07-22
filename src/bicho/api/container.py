@@ -14,6 +14,7 @@ from bicho.application.analyzers.base import Analyzer
 from bicho.application.analyzers.registry import build_analyzers
 from bicho.application.graph.builder import build_graph
 from bicho.application.review_service import ReviewService
+from bicho.application.verifier import FindingVerifier, LLMFindingVerifier, PolicyVerifier
 from bicho.config.settings import Settings
 from bicho.domain.ports.model_provider import ModelProvider
 from bicho.domain.ports.system import Clock, IdGenerator, SubprocessRunner, TempWorkspace
@@ -78,8 +79,14 @@ class Container:
             adapters=AdapterRegistry([PythonAdapter()], fallback=GenericAdapter()),
             analyzers=analyzers,
             ids=self._ids,
+            verifier=self._verifier(model),
             timeout_seconds=self._settings.review_timeout_seconds,
         )
+
+    def _verifier(self, model: ModelProvider) -> FindingVerifier:
+        if self._settings.verifier_enabled:
+            return LLMFindingVerifier(model=model)
+        return PolicyVerifier()
 
     def _github(self, installation_id: int) -> GitHubClient:
         github = self._settings.github

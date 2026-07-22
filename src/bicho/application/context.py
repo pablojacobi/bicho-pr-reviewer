@@ -8,6 +8,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 
 from bicho.application.analyzers.base import Analyzer
+from bicho.application.verifier import FindingVerifier
 from bicho.domain.models.review import ReviewOptions
 from bicho.domain.ports.diff_parser import DiffParserPort
 from bicho.domain.ports.github import GitHubPort
@@ -22,5 +23,6 @@ class ReviewContext:
     diff_parser: DiffParserPort
     adapters: LanguageAdapterRegistry
     analyzers: Mapping[str, Analyzer]
+    verifier: FindingVerifier
     options: ReviewOptions
     correlation_id: str
