@@ -8,7 +8,14 @@ from collections.abc import Sequence
 
 from bicho.domain.models.pull_request import ChangedFile
 
-_CORE_ANALYZERS = ("correctness", "security", "performance", "maintainability")
+_CORE_ANALYZERS = (
+    "correctness",
+    "security",
+    "performance",
+    "maintainability",
+    "tests",
+    "contracts",
+)
 
 
 class GenericAdapter:
