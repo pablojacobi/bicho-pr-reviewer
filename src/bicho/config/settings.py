@@ -37,6 +37,17 @@ class LLMSettings(BaseModel):
     timeout_seconds: float = 60.0
 
 
+class ScannerSettings(BaseModel):
+    """Deterministic-scanner configuration (env: ``BICHO_SCANNER__*``).
+
+    Semgrep is optional so the app runs where the binary is absent (it degrades to LLM analyzers).
+    """
+
+    semgrep_enabled: bool = True
+    semgrep_config: str = "resources/semgrep"
+    semgrep_timeout_seconds: float = 60.0
+
+
 class Settings(BaseSettings):
     """Typed, validated application settings."""
 
@@ -53,6 +64,7 @@ class Settings(BaseSettings):
 
     github: GitHubSettings = GitHubSettings()
     llm: LLMSettings = LLMSettings()
+    scanner: ScannerSettings = ScannerSettings()
 
     @field_validator("log_level")
     @classmethod

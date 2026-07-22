@@ -16,15 +16,18 @@ from bicho.application.graph.builder import build_graph
 from bicho.application.review_service import ReviewService
 from bicho.config.settings import Settings
 from bicho.domain.ports.model_provider import ModelProvider
-from bicho.domain.ports.system import Clock, IdGenerator
+from bicho.domain.ports.system import Clock, IdGenerator, SubprocessRunner, TempWorkspace
 from bicho.infrastructure.clock import SystemClock
 from bicho.infrastructure.diff.hunk_parser import DiffParser
+from bicho.infrastructure.fs.workspace import TempWorkspaceFactory
 from bicho.infrastructure.github.auth import GitHubAppAuth
 from bicho.infrastructure.github.client import GitHubClient
 from bicho.infrastructure.ids import UuidGenerator
 from bicho.infrastructure.language.generic import GenericAdapter
 from bicho.infrastructure.language.registry import AdapterRegistry
 from bicho.infrastructure.model.registry import ModelSpec, build_model_provider
+from bicho.infrastructure.process.subprocess_runner import AsyncSubprocessRunner
+from bicho.infrastructure.scanners.semgrep_runner import build_semgrep_scanner
 
 
 class Container:
@@ -37,11 +40,15 @@ class Container:
         http: httpx.AsyncClient,
         clock: Clock | None = None,
         ids: IdGenerator | None = None,
+        subprocess_runner: SubprocessRunner | None = None,
+        workspace: TempWorkspace | None = None,
     ) -> None:
         self._settings = settings
         self._http = http
         self._clock: Clock = clock or SystemClock()
         self._ids: IdGenerator = ids or UuidGenerator()
+        self._runner: SubprocessRunner = subprocess_runner or AsyncSubprocessRunner()
+        self._workspace: TempWorkspace = workspace or TempWorkspaceFactory()
         self._services: dict[int, ReviewService] = {}
 
     def review_service(self, installation_id: int | None = None) -> ReviewService:
@@ -99,4 +106,14 @@ class Container:
         )
 
     def _analyzers(self, model: ModelProvider) -> Mapping[str, Analyzer]:
-        return build_analyzers(model=model, ids=self._ids)
+        analyzers: dict[str, Analyzer] = dict(build_analyzers(model=model, ids=self._ids))
+        scanner = self._settings.scanner
+        if scanner.semgrep_enabled:
+            analyzers["semgrep"] = build_semgrep_scanner(
+                runner=self._runner,
+                workspace=self._workspace,
+                ids=self._ids,
+                config=scanner.semgrep_config,
+                timeout_seconds=scanner.semgrep_timeout_seconds,
+            )
+        return analyzers
