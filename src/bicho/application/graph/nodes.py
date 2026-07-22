@@ -11,9 +11,11 @@ from bicho.application.graph.state import ReviewState
 from bicho.domain.models.analysis import AnalyzerOutcome
 from bicho.domain.models.diff import FileChangeKind, FileDiff, NormalizedDiff
 from bicho.domain.models.marker import ReviewMarker
-from bicho.domain.models.pull_request import ChangedFile
+from bicho.domain.models.pull_request import ChangedFile, PullRequest
 from bicho.domain.models.review import ReviewStatus
 from bicho.domain.ports.diff_parser import DiffParserPort
+from bicho.domain.ports.github import GitHubPort
+from bicho.domain.ports.language_adapter import LanguageAdapter
 from bicho.domain.services.dedup import deduplicate
 from bicho.domain.services.verification_policy import verify
 
@@ -51,6 +53,37 @@ def normalize_diff(state: ReviewState, runtime: Runtime[ReviewContext]) -> dict[
 def detect_language(state: ReviewState, runtime: Runtime[ReviewContext]) -> dict[str, object]:
     adapter = runtime.context.adapters.select(state["changed_files"])
     return {"adapter": adapter, "language": adapter.language}
+
+
+async def gather_file_contents(
+    state: ReviewState, runtime: Runtime[ReviewContext]
+) -> dict[str, object]:
+    """Fetch the head content of in-scope changed files, for symbol resolution and scanners."""
+    contents = await _collect_contents(
+        runtime.context.github,
+        state["pull_request"],
+        state["adapter"],
+        state["changed_files"],
+    )
+    return {"file_contents": contents}
+
+
+async def _collect_contents(
+    github: GitHubPort,
+    pull_request: PullRequest,
+    adapter: LanguageAdapter,
+    changed_files: tuple[ChangedFile, ...],
+) -> dict[str, str]:
+    contents: dict[str, str] = {}
+    for changed in changed_files:
+        if not adapter.in_scope(changed):
+            continue
+        content = await github.fetch_file_content(
+            pull_request.repository, changed.filename, pull_request.head_sha
+        )
+        if content is not None:
+            contents[changed.filename] = content
+    return contents
 
 
 def select_analyzers(state: ReviewState, runtime: Runtime[ReviewContext]) -> dict[str, object]:
@@ -154,7 +187,7 @@ def make_analyzer_node(name: str) -> Node:
             framework=None,
             correlation_id=context.correlation_id,
             adapter=state["adapter"],
-            file_contents={},
+            file_contents=state.get("file_contents", {}),
         )
         return await context.analyzers[name].analyze(analysis)
 

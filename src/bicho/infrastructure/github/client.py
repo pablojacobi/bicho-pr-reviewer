@@ -12,9 +12,15 @@ import httpx
 from bicho.domain.errors import PullRequestNotFoundError
 from bicho.domain.models.pull_request import ChangedFile, PullRequest
 from bicho.domain.models.review import ExistingReview, InlineComment, ReviewDraft
+from bicho.infrastructure.fs.pathsafe import (
+    is_probably_binary,
+    is_safe_relative_path,
+    is_within_size,
+)
 from bicho.infrastructure.github.auth import GitHubAppAuth
 
 _ACCEPT = "application/vnd.github+json"
+_RAW_ACCEPT = "application/vnd.github.raw+json"
 _API_VERSION = "2022-11-28"
 _HTTP_NOT_FOUND = 404
 
@@ -61,6 +67,25 @@ class GitHubClient:
             files.extend(_to_changed_file(item) for item in response.json())
             url = _next_page(response.headers.get("Link"))
         return tuple(files)
+
+    async def fetch_file_content(self, repository: str, path: str, ref: str) -> str | None:
+        if not is_safe_relative_path(path):
+            return None
+        response = await self._http.get(
+            f"{self._api_base}/repos/{repository}/contents/{path}",
+            params={"ref": ref},
+            headers={**await self._headers(), "Accept": _RAW_ACCEPT},
+        )
+        if response.status_code == _HTTP_NOT_FOUND:
+            return None
+        response.raise_for_status()
+        data = response.content
+        if not is_within_size(len(data)) or is_probably_binary(data):
+            return None
+        try:
+            return data.decode("utf-8")
+        except UnicodeDecodeError:
+            return None
 
     async def list_reviews(self, repository: str, number: int) -> tuple[ExistingReview, ...]:
         response = await self._http.get(

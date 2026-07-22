@@ -122,6 +122,9 @@ def _mock_endpoints() -> respx.Route:
             200, json=[{"filename": "app/db.py", "status": "modified", "patch": _PATCH}]
         )
     )
+    respx.get(url__startswith=f"{_GH}/repos/o/r/contents/app/db.py").mock(
+        return_value=httpx.Response(200, text="def f():\n    return 1\n")
+    )
     respx.get(f"{_GH}/repos/o/r/pulls/1/reviews").mock(return_value=httpx.Response(200, json=[]))
     respx.post(f"{_LLM}/chat/completions").mock(
         return_value=httpx.Response(200, json=_chat_completion())

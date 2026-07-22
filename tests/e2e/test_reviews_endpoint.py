@@ -118,6 +118,9 @@ def _mock_github_and_model() -> None:
             200, json=[{"filename": "app/db.py", "status": "modified", "patch": _PATCH}]
         )
     )
+    respx.get(url__startswith=f"{_GH}/repos/o/r/contents/app/db.py").mock(
+        return_value=httpx.Response(200, text="def f():\n    return 1\n")
+    )
     respx.post(f"{_LLM}/chat/completions").mock(
         return_value=httpx.Response(200, json=_chat_completion(_analyzer_report()))
     )

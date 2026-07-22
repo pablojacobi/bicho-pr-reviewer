@@ -27,6 +27,7 @@ class ReviewState(TypedDict):
     diff: NotRequired[NormalizedDiff]
     language: NotRequired[str]
     adapter: NotRequired[LanguageAdapter]
+    file_contents: NotRequired[dict[str, str]]
     selected: NotRequired[list[str]]
     findings: NotRequired[list[Finding]]
     review_draft: NotRequired[ReviewDraft]

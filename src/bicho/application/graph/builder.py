@@ -19,6 +19,7 @@ from bicho.application.graph.nodes import (
     detect_language,
     fetch_changed_files,
     fetch_pull_request,
+    gather_file_contents,
     idempotency_guard,
     make_analyzer_node,
     normalize_diff,
@@ -40,6 +41,7 @@ def build_graph(analyzer_names: Sequence[str]):
     builder.add_node("fetch_changed_files", fetch_changed_files)
     builder.add_node("normalize_diff", normalize_diff)
     builder.add_node("detect_language", detect_language)
+    builder.add_node("gather_file_contents", gather_file_contents)
     builder.add_node("select_analyzers", select_analyzers)
     for name in analyzer_names:
         builder.add_node(name, make_analyzer_node(name))
@@ -54,7 +56,8 @@ def build_graph(analyzer_names: Sequence[str]):
     builder.add_edge("fetch_pull_request", "fetch_changed_files")
     builder.add_edge("fetch_changed_files", "normalize_diff")
     builder.add_edge("normalize_diff", "detect_language")
-    builder.add_edge("detect_language", "select_analyzers")
+    builder.add_edge("detect_language", "gather_file_contents")
+    builder.add_edge("gather_file_contents", "select_analyzers")
     builder.add_conditional_edges(
         "select_analyzers", route_analyzers, [*analyzer_names, "collect_findings"]
     )
