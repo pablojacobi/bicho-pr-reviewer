@@ -1,0 +1,45 @@
+"""A configurable ``GitHubPort`` fake for tests and offline runs.
+
+Pre-load it with a pull request, changed files, and existing reviews. It records published reviews
+and hands out incrementing review ids, so the pipeline runs end-to-end without hitting GitHub.
+"""
+
+from collections.abc import Sequence
+
+from bicho.domain.errors import PullRequestNotFoundError
+from bicho.domain.models.pull_request import ChangedFile, PullRequest
+from bicho.domain.models.review import ExistingReview, ReviewDraft
+
+
+class FakeGitHub:
+    """An in-memory ``GitHubPort`` implementation."""
+
+    def __init__(
+        self,
+        *,
+        pull_request: PullRequest | None = None,
+        changed_files: Sequence[ChangedFile] = (),
+        reviews: Sequence[ExistingReview] = (),
+    ) -> None:
+        self._pull_request = pull_request
+        self._changed_files = tuple(changed_files)
+        self._reviews = tuple(reviews)
+        self.published: list[ReviewDraft] = []
+        self._next_review_id = 1000
+
+    async def fetch_pull_request(self, repository: str, number: int) -> PullRequest:
+        if self._pull_request is None:
+            raise PullRequestNotFoundError(f"{repository}#{number}")
+        return self._pull_request
+
+    async def fetch_changed_files(self, repository: str, number: int) -> tuple[ChangedFile, ...]:
+        return self._changed_files
+
+    async def list_reviews(self, repository: str, number: int) -> tuple[ExistingReview, ...]:
+        return self._reviews
+
+    async def publish_review(self, repository: str, number: int, draft: ReviewDraft) -> int:
+        self.published.append(draft)
+        review_id = self._next_review_id
+        self._next_review_id += 1
+        return review_id
