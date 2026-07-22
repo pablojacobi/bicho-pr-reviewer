@@ -33,12 +33,22 @@ class GitHubSettings(BaseModel):
 
 
 class ProviderSpec(BaseModel):
-    """One OpenAI-compatible model provider (MiniMax, Gemini, OpenAI, a local proxy, …)."""
+    """One OpenAI-compatible model provider (MiniMax, Gemini, OpenAI, a local proxy, …).
+
+    ``max_attempts`` / ``retry_delay_seconds`` add fixed-delay retries for flaky endpoints (e.g.
+    MiniMax's occasional 503s). ``max_concurrency`` bounds how many calls to this provider run at
+    once across the whole review — set it to 1 to force the analyzers through this provider serially
+    (0 means unbounded / fully parallel). This keeps concurrency a property of the provider config,
+    not a vendor special-case in code.
+    """
 
     api_key: SecretStr = SecretStr("")
     base_url: str = ""
     model: str = ""
     timeout_seconds: float = 60.0
+    max_attempts: int = 1
+    retry_delay_seconds: float = 0.0
+    max_concurrency: int = 0
 
 
 class LLMSettings(BaseModel):

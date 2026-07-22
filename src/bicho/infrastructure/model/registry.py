@@ -15,12 +15,15 @@ from bicho.infrastructure.model.provider import LangChainModelProvider
 
 @dataclass(frozen=True)
 class ModelSpec:
-    """Everything needed to construct a chat model for one role."""
+    """Everything needed to construct a chat model and its provider wrapper."""
 
     model: str
     api_key: str
     base_url: str
     timeout_seconds: float = 60.0
+    max_attempts: int = 1
+    retry_delay_seconds: float = 0.0
+    max_concurrency: int = 0
 
 
 def build_chat_model(spec: ModelSpec) -> ChatOpenAI:
@@ -37,4 +40,10 @@ def build_chat_model(spec: ModelSpec) -> ChatOpenAI:
 
 def build_model_provider(spec: ModelSpec) -> LangChainModelProvider:
     """Construct the structured-output provider for a role."""
-    return LangChainModelProvider(model=build_chat_model(spec), model_id=spec.model)
+    return LangChainModelProvider(
+        model=build_chat_model(spec),
+        model_id=spec.model,
+        max_attempts=spec.max_attempts,
+        retry_delay_seconds=spec.retry_delay_seconds,
+        max_concurrency=spec.max_concurrency,
+    )
