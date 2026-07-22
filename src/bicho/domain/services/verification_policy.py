@@ -8,7 +8,13 @@ from bicho.domain.models.finding import Confidence, Finding, VerificationState
 
 
 def verify(finding: Finding) -> Finding:
-    """Return the finding with its verification state decided by the policy."""
+    """Return the finding with its verification state decided by the policy.
+
+    Only ``CANDIDATE`` findings are judged here; a finding an earlier pass already resolved (e.g. a
+    ``DUPLICATE`` from deduplication) is left untouched, so it is never promoted back to CONFIRMED.
+    """
+    if finding.verification_state is not VerificationState.CANDIDATE:
+        return finding
     if finding.confidence is Confidence.LOW:
         return finding.model_copy(
             update={

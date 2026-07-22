@@ -18,3 +18,15 @@ def test_rejects_low_confidence(make_finding: Callable[..., Finding]) -> None:
 
     assert result.verification_state is VerificationState.REJECTED
     assert result.verification_reason is not None
+
+
+def test_leaves_already_resolved_findings_untouched(make_finding: Callable[..., Finding]) -> None:
+    # A DUPLICATE from deduplication must not be promoted back to CONFIRMED by confidence.
+    duplicate = make_finding(
+        confidence=Confidence.HIGH, verification_state=VerificationState.DUPLICATE
+    )
+
+    result = verify(duplicate)
+
+    assert result is duplicate
+    assert result.verification_state is VerificationState.DUPLICATE

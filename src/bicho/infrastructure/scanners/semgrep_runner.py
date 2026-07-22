@@ -98,6 +98,9 @@ class SemgrepScanner:
 
     def _to_finding(self, match: SemgrepResult, context: AnalysisContext) -> Finding:
         path = match.path.removeprefix("./")
+        # Semgrep namespaces a rule id by the ruleset's file path (e.g.
+        # "app.resources.semgrep.python.python-eval-on-input"); keep only the rule's own name.
+        rule = match.check_id.rsplit(".", 1)[-1]
         start = match.start.line
         end = max(start, match.end.line)
         return Finding(
@@ -105,16 +108,16 @@ class SemgrepScanner:
             fingerprint=compute_fingerprint(
                 path=path,
                 category=Category.SECURITY.value,
-                subcategory=match.check_id,
-                rule_key=match.check_id,
+                subcategory=rule,
+                rule_key=rule,
                 enclosing_symbol=None,
                 snippet="",
             ),
             category=Category.SECURITY,
-            subcategory=match.check_id,
+            subcategory=rule,
             severity=_SEVERITY.get(match.extra.severity.upper(), Severity.LOW),
             confidence=Confidence.HIGH,
-            title=f"Semgrep: {match.check_id}",
+            title=f"Semgrep: {rule}",
             explanation=match.extra.message or "A Semgrep rule matched this code.",
             impact="A static-analysis rule flagged a pattern introduced by this change.",
             recommendation="Review the flagged pattern and remediate as the rule advises.",
