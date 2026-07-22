@@ -42,27 +42,36 @@ class Container:
         self._http = http
         self._clock: Clock = clock or SystemClock()
         self._ids: IdGenerator = ids or UuidGenerator()
-        self._service: ReviewService | None = None
+        self._services: dict[int, ReviewService] = {}
 
-    def review_service(self) -> ReviewService:
-        """Return the shared, lazily-built review service."""
-        if self._service is None:
-            self._service = self._build_service()
-        return self._service
+    def review_service(self, installation_id: int | None = None) -> ReviewService:
+        """Return the review service for an installation (the settings default if unspecified).
 
-    def _build_service(self) -> ReviewService:
+        A webhook carries its own installation id; the manual endpoint falls back to the configured
+        default. Services are cached per installation so tokens are minted per installation.
+        """
+        resolved = (
+            installation_id
+            if installation_id is not None
+            else self._settings.github.installation_id
+        )
+        if resolved not in self._services:
+            self._services[resolved] = self._build_service(resolved)
+        return self._services[resolved]
+
+    def _build_service(self, installation_id: int) -> ReviewService:
         model = self._model_provider()
         analyzers = self._analyzers(model)
         return ReviewService(
             graph=build_graph(list(analyzers)),
-            github=self._github(),
+            github=self._github(installation_id),
             diff_parser=DiffParser(),
             adapters=AdapterRegistry([], fallback=GenericAdapter()),
             analyzers=analyzers,
             ids=self._ids,
         )
 
-    def _github(self) -> GitHubClient:
+    def _github(self, installation_id: int) -> GitHubClient:
         github = self._settings.github
         auth = GitHubAppAuth(
             app_id=github.app_id,
@@ -73,7 +82,7 @@ class Container:
         )
         return GitHubClient(
             auth=auth,
-            installation_id=github.installation_id,
+            installation_id=installation_id,
             http=self._http,
             api_base=github.api_base,
         )

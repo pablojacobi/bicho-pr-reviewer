@@ -21,6 +21,7 @@ class GitHubSettings(BaseModel):
     private_key: SecretStr = SecretStr("")
     installation_id: int = 0
     api_base: str = "https://api.github.com"
+    webhook_secret: SecretStr = SecretStr("")
 
 
 class LLMSettings(BaseModel):
