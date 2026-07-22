@@ -8,10 +8,32 @@ from the environment with the ``BICHO_`` prefix; nested sections (added as featu
 
 import logging
 
-from pydantic import field_validator
+from pydantic import BaseModel, SecretStr, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 from bicho.config.environment import Environment
+
+
+class GitHubSettings(BaseModel):
+    """GitHub App credentials and API base (env: ``BICHO_GITHUB__*``)."""
+
+    app_id: str = ""
+    private_key: SecretStr = SecretStr("")
+    installation_id: int = 0
+    api_base: str = "https://api.github.com"
+
+
+class LLMSettings(BaseModel):
+    """Model endpoint configuration (env: ``BICHO_LLM__*``).
+
+    Defaults target MiniMax's OpenAI-compatible endpoint; the model id and base URL are plain
+    configuration so nothing MiniMax-specific is hard-coded.
+    """
+
+    api_key: SecretStr = SecretStr("")
+    base_url: str = "https://api.minimax.io/v1"
+    model: str = "MiniMax-M3"
+    timeout_seconds: float = 60.0
 
 
 class Settings(BaseSettings):
@@ -27,6 +49,9 @@ class Settings(BaseSettings):
     log_level: str = "INFO"
     # None => derive from the environment (JSON logs in production, human-readable elsewhere).
     json_logs: bool | None = None
+
+    github: GitHubSettings = GitHubSettings()
+    llm: LLMSettings = LLMSettings()
 
     @field_validator("log_level")
     @classmethod
