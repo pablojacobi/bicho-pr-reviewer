@@ -21,6 +21,7 @@ dev = [
     "httpx>=0.28,<0.29",
     "ruff>=0.15,<0.16",
     "pyright>=1.1.411,<2",
+    "hypothesis>=6,<7",
 ]
 
 [build-system]
@@ -64,8 +65,10 @@ source = ["bicho"]
 
 [tool.coverage.report]
 show_missing = true
-# Standard, non-cheating exclusions. Expanded (with justification) as Protocols/abstracts appear.
+# Standard, non-cheating exclusions. Protocol/stub bodies (`...`) are signatures that never execute;
+# TYPE_CHECKING blocks and the module __main__ guard never run under tests.
 exclude_also = [
     "if __name__ == .__main__.:",
     "if TYPE_CHECKING:",
+    "^\\s*\\.\\.\\.\\s*$",
 ]
