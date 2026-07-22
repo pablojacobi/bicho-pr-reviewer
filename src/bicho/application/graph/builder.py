@@ -15,6 +15,7 @@ from langgraph.graph import END, START, StateGraph
 from bicho.application.context import ReviewContext
 from bicho.application.graph.nodes import (
     collect_findings,
+    compose_review,
     detect_language,
     fetch_changed_files,
     fetch_pull_request,
@@ -22,6 +23,7 @@ from bicho.application.graph.nodes import (
     normalize_diff,
     route_analyzers,
     select_analyzers,
+    verify_findings,
 )
 from bicho.application.graph.state import ReviewState
 
@@ -37,6 +39,8 @@ def build_graph(analyzer_names: Sequence[str]):
     for name in analyzer_names:
         builder.add_node(name, make_analyzer_node(name))
     builder.add_node("collect_findings", collect_findings)
+    builder.add_node("verify_findings", verify_findings)
+    builder.add_node("compose_review", compose_review)
 
     builder.add_edge(START, "fetch_pull_request")
     builder.add_edge("fetch_pull_request", "fetch_changed_files")
@@ -48,7 +52,9 @@ def build_graph(analyzer_names: Sequence[str]):
     )
     for name in analyzer_names:
         builder.add_edge(name, "collect_findings")
-    builder.add_edge("collect_findings", END)
+    builder.add_edge("collect_findings", "verify_findings")
+    builder.add_edge("verify_findings", "compose_review")
+    builder.add_edge("compose_review", END)
     return builder.compile()
 
 

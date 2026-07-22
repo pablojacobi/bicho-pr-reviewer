@@ -11,7 +11,7 @@ from bicho.domain.models.analysis import AnalyzerOutcome
 from bicho.domain.models.diff import NormalizedDiff
 from bicho.domain.models.finding import Finding
 from bicho.domain.models.pull_request import ChangedFile, PullRequest
-from bicho.domain.models.review import ReviewRequest
+from bicho.domain.models.review import ReviewDraft, ReviewRequest
 from bicho.domain.ports.language_adapter import LanguageAdapter
 
 
@@ -29,3 +29,4 @@ class ReviewState(TypedDict):
     adapter: NotRequired[LanguageAdapter]
     selected: NotRequired[list[str]]
     findings: NotRequired[list[Finding]]
+    review_draft: NotRequired[ReviewDraft]

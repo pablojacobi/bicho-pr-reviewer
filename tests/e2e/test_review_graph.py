@@ -90,6 +90,9 @@ async def test_graph_produces_findings() -> None:
     findings = result["findings"]
     assert len(findings) == 1
     assert findings[0].category is Category.CORRECTNESS
+    draft = result["review_draft"]
+    assert len(draft.inline_comments) == 1
+    assert draft.commit_id == "sha"
 
 
 async def test_graph_degrades_when_an_analyzer_raises() -> None:
