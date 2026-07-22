@@ -79,3 +79,13 @@ class ReviewDraft(BaseModel):
     event: ReviewEvent
     commit_id: str
     inline_comments: tuple[InlineComment, ...] = ()
+
+
+class ExistingReview(BaseModel):
+    """A review already on the PR, used to detect Bicho's own prior review via its marker."""
+
+    model_config = ConfigDict(frozen=True)
+
+    id: int
+    author: str
+    body: str

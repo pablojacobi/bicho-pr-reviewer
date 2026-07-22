@@ -17,3 +17,16 @@ class PullRequest(BaseModel):
     is_draft: bool = False
     author: str = ""
     installation_id: int | None = None
+
+
+class ChangedFile(BaseModel):
+    """A file changed in a PR, as returned by GitHub's "list pull request files" endpoint."""
+
+    model_config = ConfigDict(frozen=True)
+
+    filename: str
+    status: str
+    patch: str | None = None
+    previous_filename: str | None = None
+    additions: int = 0
+    deletions: int = 0

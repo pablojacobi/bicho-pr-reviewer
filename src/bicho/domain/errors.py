@@ -15,3 +15,11 @@ class UnsafePathError(BichoError):
     def __init__(self, path: str) -> None:
         super().__init__(f"unsafe path rejected: {path!r}")
         self.path = path
+
+
+class GitHubError(BichoError):
+    """Base class for failures interacting with GitHub."""
+
+
+class PullRequestNotFoundError(GitHubError):
+    """Raised when the requested pull request does not exist or is inaccessible."""
