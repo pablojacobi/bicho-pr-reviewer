@@ -89,3 +89,23 @@ class ExistingReview(BaseModel):
     id: int
     author: str
     body: str
+
+
+class ReviewStatus(StrEnum):
+    """The outcome of a review run."""
+
+    DRY_RUN = "dry_run"
+    COMPLETED = "completed"
+    SKIPPED = "skipped"
+    FAILED = "failed"
+
+
+class ReviewResult(BaseModel):
+    """The result of running the review pipeline."""
+
+    model_config = ConfigDict(frozen=True)
+
+    status: ReviewStatus
+    draft: ReviewDraft | None = None
+    confirmed_count: int = 0
+    total_count: int = 0
