@@ -1,5 +1,11 @@
 # Bicho PR Reviewer
 
+[![CI](https://github.com/pablojacobi/bicho-pr-reviewer/actions/workflows/ci.yml/badge.svg)](https://github.com/pablojacobi/bicho-pr-reviewer/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/pablojacobi/bicho-pr-reviewer/actions/workflows/codeql.yml/badge.svg)](https://github.com/pablojacobi/bicho-pr-reviewer/actions/workflows/codeql.yml)
+[![codecov](https://codecov.io/gh/pablojacobi/bicho-pr-reviewer/branch/main/graph/badge.svg)](https://codecov.io/gh/pablojacobi/bicho-pr-reviewer)
+[![Python 3.14](https://img.shields.io/badge/python-3.14-blue.svg)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 > Automated GitHub Pull Request review agent — it gathers PR context, runs deterministic scanners
 > (Semgrep CE, pip-audit) plus LLM-based specialized analyzers, **verifies** findings to cut false
 > positives, and publishes a **single** GitHub Review: an executive summary plus multiple **inline
