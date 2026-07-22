@@ -39,7 +39,7 @@ jobs:
           uv run python -c "from bicho.api.app import create_app; create_app()"
           uv run python -c "import json; from bicho.api.app import create_app; json.dumps(create_app().openapi())"
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v7
         with:
           files: coverage.xml
           fail_ci_if_error: false
