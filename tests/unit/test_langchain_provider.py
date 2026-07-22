@@ -61,9 +61,18 @@ def _completion(tool_arguments: str) -> dict[str, Any]:
     }
 
 
-def _provider() -> LangChainModelProvider:
+def _provider(
+    *, max_attempts: int = 1, retry_delay_seconds: float = 0.0, max_concurrency: int = 0
+) -> LangChainModelProvider:
     return build_model_provider(
-        ModelSpec(model="MiniMax-M3", api_key="test-key", base_url=_BASE_URL)
+        ModelSpec(
+            model="MiniMax-M3",
+            api_key="test-key",
+            base_url=_BASE_URL,
+            max_attempts=max_attempts,
+            retry_delay_seconds=retry_delay_seconds,
+            max_concurrency=max_concurrency,
+        )
     )
 
 
@@ -101,6 +110,45 @@ async def test_structured_reports_transport_error_as_data() -> None:
     assert not result.ok
     assert result.value is None
     assert result.error is not None
+
+
+@respx.mock
+async def test_retries_a_transient_failure_then_succeeds() -> None:
+    respx.post(f"{_BASE_URL}/chat/completions").mock(
+        side_effect=[
+            httpx.Response(503, json={"error": {"message": "overloaded"}}),
+            httpx.Response(200, json=_completion('{"summary": "ok", "score": 3}')),
+        ]
+    )
+    result = await _provider(max_attempts=3).structured(prompt="p", schema=Answer, meta=_META)
+
+    assert result.ok
+    assert result.value == Answer(summary="ok", score=3)
+
+
+@respx.mock
+async def test_returns_the_last_failure_after_exhausting_retries() -> None:
+    respx.post(f"{_BASE_URL}/chat/completions").mock(
+        side_effect=[
+            httpx.Response(503, json={"error": {"message": "overloaded"}}),
+            httpx.Response(503, json={"error": {"message": "overloaded"}}),
+        ]
+    )
+    result = await _provider(max_attempts=2).structured(prompt="p", schema=Answer, meta=_META)
+
+    assert not result.ok
+    assert result.error is not None
+
+
+@respx.mock
+async def test_concurrency_limited_provider_still_returns_a_value() -> None:
+    respx.post(f"{_BASE_URL}/chat/completions").mock(
+        return_value=httpx.Response(200, json=_completion('{"summary": "ok", "score": 3}'))
+    )
+    result = await _provider(max_concurrency=1).structured(prompt="p", schema=Answer, meta=_META)
+
+    assert result.ok
+    assert result.value == Answer(summary="ok", score=3)
 
 
 def test_run_config_carries_tracing_tags() -> None:

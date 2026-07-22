@@ -11,6 +11,7 @@ The concrete chat model (``ChatOpenAI`` pointed at MiniMax) is injected, keeping
 any provider-specific import; :mod:`bicho.infrastructure.model.registry` builds it from settings.
 """
 
+import asyncio
 from typing import Any, cast
 
 from langchain_core.language_models import BaseChatModel
@@ -24,11 +25,44 @@ from bicho.domain.ports.model_provider import ModelResult, RunMeta, error_result
 class LangChainModelProvider:
     """Runs a structured, schema-validated model call through an injected LangChain chat model."""
 
-    def __init__(self, *, model: BaseChatModel, model_id: str) -> None:
+    def __init__(
+        self,
+        *,
+        model: BaseChatModel,
+        model_id: str,
+        max_attempts: int = 1,
+        retry_delay_seconds: float = 0.0,
+        max_concurrency: int = 0,
+    ) -> None:
         self._model = model
         self._model_id = model_id
+        self._max_attempts = max(1, max_attempts)
+        self._retry_delay_seconds = retry_delay_seconds
+        # A shared semaphore serializes/bounds calls to this provider across the whole review; None
+        # means unbounded (fully parallel). One instance is shared by every analyzer, so a limit of
+        # 1 runs the LLM analyzers serially while the deterministic scanners still fan out.
+        self._semaphore = asyncio.Semaphore(max_concurrency) if max_concurrency > 0 else None
 
     async def structured[T: BaseModel](
+        self, *, prompt: str, schema: type[T], meta: RunMeta
+    ) -> ModelResult[T]:
+        if self._semaphore is None:
+            return await self._with_retries(prompt=prompt, schema=schema, meta=meta)
+        async with self._semaphore:
+            return await self._with_retries(prompt=prompt, schema=schema, meta=meta)
+
+    async def _with_retries[T: BaseModel](
+        self, *, prompt: str, schema: type[T], meta: RunMeta
+    ) -> ModelResult[T]:
+        result = await self._attempt(prompt=prompt, schema=schema, meta=meta)
+        attempt = 1
+        while not result.ok and attempt < self._max_attempts:
+            await asyncio.sleep(self._retry_delay_seconds)
+            result = await self._attempt(prompt=prompt, schema=schema, meta=meta)
+            attempt += 1
+        return result
+
+    async def _attempt[T: BaseModel](
         self, *, prompt: str, schema: type[T], meta: RunMeta
     ) -> ModelResult[T]:
         structured_model = self._model.with_structured_output(

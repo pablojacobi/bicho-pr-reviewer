@@ -103,6 +103,9 @@ class Container:
                 api_key=provider.api_key.get_secret_value(),
                 base_url=provider.base_url,
                 timeout_seconds=provider.timeout_seconds,
+                max_attempts=provider.max_attempts,
+                retry_delay_seconds=provider.retry_delay_seconds,
+                max_concurrency=provider.max_concurrency,
             )
         )
 
