@@ -4,6 +4,7 @@ from langgraph.runtime import Runtime
 
 from bicho.application.analyzers.base import AnalysisContext
 from bicho.application.context import ReviewContext
+from bicho.application.graph.compose import compose_review_draft
 from bicho.application.graph.resilience import Node, resilient_analyzer_node
 from bicho.application.graph.state import ReviewState
 from bicho.domain.models.analysis import AnalyzerOutcome
@@ -11,6 +12,7 @@ from bicho.domain.models.diff import FileChangeKind, FileDiff, NormalizedDiff
 from bicho.domain.models.pull_request import ChangedFile
 from bicho.domain.ports.diff_parser import DiffParserPort
 from bicho.domain.services.dedup import deduplicate
+from bicho.domain.services.verification_policy import verify
 
 _CHANGE_KIND = {
     "added": FileChangeKind.ADDED,
@@ -62,6 +64,21 @@ def collect_findings(state: ReviewState, runtime: Runtime[ReviewContext]) -> dic
 def route_analyzers(state: ReviewState) -> list[str]:
     selected = state.get("selected") or []
     return selected if selected else ["collect_findings"]
+
+
+def verify_findings(state: ReviewState, runtime: Runtime[ReviewContext]) -> dict[str, object]:
+    verified = [verify(finding) for finding in state.get("findings", [])]
+    return {"findings": verified}
+
+
+def compose_review(state: ReviewState, runtime: Runtime[ReviewContext]) -> dict[str, object]:
+    draft = compose_review_draft(
+        findings=state.get("findings", []),
+        diff=state["diff"],
+        pull_request=state["pull_request"],
+        outcomes=state["outcomes"],
+    )
+    return {"review_draft": draft}
 
 
 def make_analyzer_node(name: str) -> Node:
