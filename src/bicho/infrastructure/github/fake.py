@@ -4,7 +4,7 @@ Pre-load it with a pull request, changed files, and existing reviews. It records
 and hands out incrementing review ids, so the pipeline runs end-to-end without hitting GitHub.
 """
 
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 
 from bicho.domain.errors import PullRequestNotFoundError
 from bicho.domain.models.pull_request import ChangedFile, PullRequest
@@ -20,11 +20,13 @@ class FakeGitHub:
         pull_request: PullRequest | None = None,
         changed_files: Sequence[ChangedFile] = (),
         reviews: Sequence[ExistingReview] = (),
+        file_contents: Mapping[str, str] | None = None,
         moved_head_sha: str | None = None,
     ) -> None:
         self._pull_request = pull_request
         self._changed_files = tuple(changed_files)
         self._reviews = tuple(reviews)
+        self._file_contents = dict(file_contents or {})
         # When set, the second and later fetches report this head SHA, simulating a push that
         # lands between analysis and publishing (exercises the stale-head guard).
         self._moved_head_sha = moved_head_sha
@@ -42,6 +44,9 @@ class FakeGitHub:
 
     async def fetch_changed_files(self, repository: str, number: int) -> tuple[ChangedFile, ...]:
         return self._changed_files
+
+    async def fetch_file_content(self, repository: str, path: str, ref: str) -> str | None:
+        return self._file_contents.get(path)
 
     async def list_reviews(self, repository: str, number: int) -> tuple[ExistingReview, ...]:
         return self._reviews

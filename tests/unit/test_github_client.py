@@ -157,6 +157,63 @@ async def test_publish_review_without_comments() -> None:
     assert "comments" not in captured["json"]
 
 
+@respx.mock
+async def test_fetch_file_content_returns_text() -> None:
+    _mock_token()
+    respx.get(url__startswith=f"{_API}/repos/o/r/contents/app/db.py").mock(
+        return_value=httpx.Response(200, text="print('hi')\n")
+    )
+    async with httpx.AsyncClient() as http:
+        content = await _client(http).fetch_file_content("o/r", "app/db.py", "sha")
+
+    assert content == "print('hi')\n"
+
+
+async def test_fetch_file_content_rejects_unsafe_path() -> None:
+    async with httpx.AsyncClient() as http:
+        assert await _client(http).fetch_file_content("o/r", "../etc/passwd", "sha") is None
+
+
+@respx.mock
+async def test_fetch_file_content_missing_is_none() -> None:
+    _mock_token()
+    respx.get(url__startswith=f"{_API}/repos/o/r/contents/gone.py").mock(
+        return_value=httpx.Response(404, json={})
+    )
+    async with httpx.AsyncClient() as http:
+        assert await _client(http).fetch_file_content("o/r", "gone.py", "sha") is None
+
+
+@respx.mock
+async def test_fetch_file_content_skips_oversized() -> None:
+    _mock_token()
+    respx.get(url__startswith=f"{_API}/repos/o/r/contents/big.py").mock(
+        return_value=httpx.Response(200, content=b"x" * 1_000_001)
+    )
+    async with httpx.AsyncClient() as http:
+        assert await _client(http).fetch_file_content("o/r", "big.py", "sha") is None
+
+
+@respx.mock
+async def test_fetch_file_content_skips_binary() -> None:
+    _mock_token()
+    respx.get(url__startswith=f"{_API}/repos/o/r/contents/logo.png").mock(
+        return_value=httpx.Response(200, content=b"\x00\x01\x02")
+    )
+    async with httpx.AsyncClient() as http:
+        assert await _client(http).fetch_file_content("o/r", "logo.png", "sha") is None
+
+
+@respx.mock
+async def test_fetch_file_content_skips_undecodable() -> None:
+    _mock_token()
+    respx.get(url__startswith=f"{_API}/repos/o/r/contents/weird.py").mock(
+        return_value=httpx.Response(200, content=b"\xff\xfe")
+    )
+    async with httpx.AsyncClient() as http:
+        assert await _client(http).fetch_file_content("o/r", "weird.py", "sha") is None
+
+
 def test_next_page_parsing() -> None:
     assert _next_page(None) is None
     assert _next_page('<https://x/2>; rel="next"') == "https://x/2"

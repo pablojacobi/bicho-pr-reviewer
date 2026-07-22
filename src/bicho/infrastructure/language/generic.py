@@ -7,6 +7,7 @@ than failing. It provides no symbol extraction (fingerprints fall back to path +
 from collections.abc import Sequence
 
 from bicho.domain.models.pull_request import ChangedFile
+from bicho.infrastructure.fs.pathsafe import is_generated_or_vendored, is_safe_relative_path
 
 _CORE_ANALYZERS = (
     "correctness",
@@ -27,7 +28,11 @@ class GenericAdapter:
         return 0.1 if files else 0.0
 
     def in_scope(self, file: ChangedFile) -> bool:
-        return file.patch is not None
+        return (
+            file.patch is not None
+            and is_safe_relative_path(file.filename)
+            and not is_generated_or_vendored(file.filename)
+        )
 
     def default_analyzers(self) -> tuple[str, ...]:
         return _CORE_ANALYZERS
