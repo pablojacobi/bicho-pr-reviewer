@@ -4,7 +4,9 @@ builder = "dockerfile"
 dockerfilePath = "Dockerfile"
 
 [deploy]
-startCommand = "uvicorn bicho.api.app:create_app --factory --host 0.0.0.0 --port $PORT"
+# No startCommand: use the Dockerfile CMD (exec-form `sh -c "... --port ${PORT:-8000}"`), which
+# expands Railway's injected $PORT. A startCommand string here is passed to uvicorn without shell
+# expansion, so `$PORT` reaches it literally ("'$PORT' is not a valid integer").
 healthcheckPath = "/healthz"
 healthcheckTimeout = 100
 restartPolicyType = "on_failure"
