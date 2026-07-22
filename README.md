@@ -40,10 +40,19 @@ Python 3.14 · FastAPI · Pydantic v2 · LangChain / LangGraph v1 · MiniMax-M3 
 Semgrep Community Edition · pip-audit · uv · pytest + Hypothesis + RESPX · Ruff · Pyright · Docker ·
 Railway.
 
+## Documentation
+
+- [AGENTS.md](AGENTS.md) — contributor/agent guide and the source of truth for how this repo is built.
+- [ARCHITECTURE.md](ARCHITECTURE.md) — layers, the target review pipeline, and diagrams.
+- [docs/adr/](docs/adr/) — architecture decision records (why it is shaped this way).
+- [docs/limitations.md](docs/limitations.md) — deliberate constraints, stated honestly.
+
 ## Status
 
-Phase 1 — foundation (bootstrapping). Documentation, architecture diagrams, and a live demo will land
-as the build progresses.
+Phase 1 (foundation) is essentially complete: tooling and CI enforcing 100% coverage, the injectable
+system primitives, a working non-root container, and the documentation above. Next is the offline test
+harness (Phase 2), then the manual review vertical slice. A live demo and screenshots land in the
+final phase.
 
 ## Acknowledgements
 
