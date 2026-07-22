@@ -1,0 +1,55 @@
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+build/
+dist/
+*.so
+
+# ---- Virtual environments ----
+.venv/
+venv/
+env/
+ENV/
+
+# ---- uv ----
+# Note: uv.lock IS committed for reproducible installs — do not ignore it.
+
+# ---- Environment & secrets (NEVER commit) ----
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+*-private-key.pem
+*.p8
+secrets/
+
+# ---- Test / coverage ----
+.pytest_cache/
+.hypothesis/
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+junit*.xml
+
+# ---- Type checkers / linters caches ----
+.ruff_cache/
+.mypy_cache/
+.pyright/
+.dmypy.json
+
+# ---- Runtime scratch (temp analysis workspaces) ----
+.bicho_workspaces/
+tmp_workspaces/
+
+# ---- OS / editor ----
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.idea/
+.vscode/
