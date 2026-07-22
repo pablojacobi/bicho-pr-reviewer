@@ -6,6 +6,7 @@ parallel superstep is not rolled back. Invalid line ranges from the model are cl
 
 from collections.abc import Mapping
 from dataclasses import dataclass
+from typing import Protocol
 
 from bicho.application.analyzers.schemas import AnalyzerReport, RawFinding
 from bicho.application.prompts.registry import PROMPT_VERSION, get_prompt
@@ -31,6 +32,12 @@ class AnalysisContext:
     correlation_id: str
     adapter: LanguageAdapter
     file_contents: Mapping[str, str]
+
+
+class Analyzer(Protocol):
+    """Runs one analyzer over the PR context and returns an outcome (never raises)."""
+
+    async def analyze(self, context: AnalysisContext) -> AnalyzerOutcome: ...
 
 
 def render_diff(diff: NormalizedDiff) -> str:
