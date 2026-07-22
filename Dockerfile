@@ -38,12 +38,15 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     uv tool install "semgrep==1.170.1" && \
     uv tool install "pip-audit"
 
-RUN groupadd --system bicho && useradd --system --gid bicho --home-dir /app bicho
+# A writable home so tools that cache/log under $HOME (Semgrep writes ~/.semgrep) work as non-root.
+RUN groupadd --system bicho \
+    && useradd --system --gid bicho --create-home --home-dir /home/bicho bicho
 
 WORKDIR /app
 COPY --from=builder --chown=bicho:bicho /app /app
 
 ENV PATH="/app/.venv/bin:${PATH}" \
+    HOME=/home/bicho \
     PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     BICHO_ENVIRONMENT=production \
