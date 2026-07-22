@@ -18,6 +18,10 @@ def missing_requirements(settings: Settings) -> list[str]:
         problems.append("github.private_key is not set")
     if github.installation_id == 0:
         problems.append("github.installation_id is not set")
-    if not settings.llm.api_key.get_secret_value():
-        problems.append("llm.api_key is not set")
+    llm = settings.llm
+    provider = llm.providers.get(llm.active)
+    if provider is None:
+        problems.append(f"llm.active provider {llm.active!r} is not in llm.providers")
+    elif not (provider.api_key.get_secret_value() and provider.base_url and provider.model):
+        problems.append(f"llm provider {llm.active!r} is missing api_key/base_url/model")
     return problems

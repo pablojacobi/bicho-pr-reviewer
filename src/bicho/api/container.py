@@ -96,13 +96,13 @@ class Container:
         )
 
     def _model_provider(self) -> ModelProvider:
-        llm = self._settings.llm
+        provider = self._settings.llm.active_provider()
         return build_model_provider(
             ModelSpec(
-                model=llm.model,
-                api_key=llm.api_key.get_secret_value(),
-                base_url=llm.base_url,
-                timeout_seconds=llm.timeout_seconds,
+                model=provider.model,
+                api_key=provider.api_key.get_secret_value(),
+                base_url=provider.base_url,
+                timeout_seconds=provider.timeout_seconds,
             )
         )
 

@@ -18,7 +18,13 @@ from cryptography.hazmat.primitives.asymmetric import rsa
 from pydantic import SecretStr
 
 from bicho.api.app import create_app
-from bicho.config.settings import GitHubSettings, LLMSettings, ScannerSettings, Settings
+from bicho.config.settings import (
+    GitHubSettings,
+    LLMSettings,
+    ProviderSpec,
+    ScannerSettings,
+    Settings,
+)
 
 _GH = "https://gh.test/api"
 _LLM = "https://llm.test/v1"
@@ -47,7 +53,9 @@ def _settings() -> Settings:
             api_base=_GH,
             webhook_secret=SecretStr(_SECRET),
         ),
-        llm=LLMSettings(api_key=SecretStr("k"), base_url=_LLM, model="MiniMax-M3"),
+        llm=LLMSettings(
+            providers={"minimax": ProviderSpec(api_key=SecretStr("k"), base_url=_LLM, model="m")}
+        ),
         scanner=ScannerSettings(semgrep_enabled=False, pip_audit_enabled=False),
     )
 

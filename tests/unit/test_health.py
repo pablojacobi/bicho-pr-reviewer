@@ -5,7 +5,7 @@ from pydantic import SecretStr
 
 from bicho import __version__
 from bicho.api.app import create_app
-from bicho.config.settings import GitHubSettings, LLMSettings, Settings
+from bicho.config.settings import GitHubSettings, LLMSettings, ProviderSpec, Settings
 
 
 def _client(app: httpx.ASGITransport) -> httpx.AsyncClient:
@@ -33,7 +33,11 @@ async def test_readyz_reports_not_ready_when_unconfigured() -> None:
 async def test_readyz_reports_ready_when_configured() -> None:
     settings = Settings(
         github=GitHubSettings(app_id="1", private_key=SecretStr("key"), installation_id=7),
-        llm=LLMSettings(api_key=SecretStr("k")),
+        llm=LLMSettings(
+            providers={
+                "minimax": ProviderSpec(api_key=SecretStr("k"), base_url="https://x/v1", model="m")
+            }
+        ),
     )
     async with _client(httpx.ASGITransport(app=create_app(settings))) as client:
         response = await client.get("/readyz")

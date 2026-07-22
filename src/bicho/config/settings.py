@@ -32,17 +32,35 @@ class GitHubSettings(BaseModel):
         return value
 
 
-class LLMSettings(BaseModel):
-    """Model endpoint configuration (env: ``BICHO_LLM__*``).
-
-    Defaults target MiniMax's OpenAI-compatible endpoint; the model id and base URL are plain
-    configuration so nothing MiniMax-specific is hard-coded.
-    """
+class ProviderSpec(BaseModel):
+    """One OpenAI-compatible model provider (MiniMax, Gemini, OpenAI, a local proxy, …)."""
 
     api_key: SecretStr = SecretStr("")
-    base_url: str = "https://api.minimax.io/v1"
-    model: str = "MiniMax-M3"
+    base_url: str = ""
+    model: str = ""
     timeout_seconds: float = 60.0
+
+
+class LLMSettings(BaseModel):
+    """Model configuration (env: ``BICHO_LLM__*``).
+
+    Several providers can be configured at once, each under its own name, and ``active`` selects the
+    one in use — so adding a model (e.g. Gemini) is a new provider block plus flipping ``active``,
+    never swapping keys. Every provider is just an OpenAI-compatible endpoint; nothing here is
+    vendor-specific in code. Example env::
+
+        BICHO_LLM__ACTIVE=minimax
+        BICHO_LLM__PROVIDERS__MINIMAX__API_KEY=...
+        BICHO_LLM__PROVIDERS__MINIMAX__BASE_URL=https://api.minimax.io/v1
+        BICHO_LLM__PROVIDERS__MINIMAX__MODEL=minimax-m3
+    """
+
+    active: str = "minimax"
+    providers: dict[str, ProviderSpec] = {}
+
+    def active_provider(self) -> ProviderSpec:
+        """Return the selected provider's spec (an empty spec if it is not configured)."""
+        return self.providers.get(self.active, ProviderSpec())
 
 
 class ScannerSettings(BaseModel):

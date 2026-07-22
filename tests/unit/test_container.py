@@ -5,13 +5,19 @@ from pydantic import SecretStr
 
 from bicho.api.container import Container
 from bicho.application.review_service import ReviewService
-from bicho.config.settings import GitHubSettings, LLMSettings, Settings
+from bicho.config.settings import GitHubSettings, LLMSettings, ProviderSpec, Settings
 
 
 def _settings() -> Settings:
     return Settings(
         github=GitHubSettings(app_id="1", private_key=SecretStr("key"), installation_id=7),
-        llm=LLMSettings(api_key=SecretStr("test"), base_url="https://llm.test/v1"),
+        llm=LLMSettings(
+            providers={
+                "minimax": ProviderSpec(
+                    api_key=SecretStr("test"), base_url="https://llm.test/v1", model="m"
+                )
+            }
+        ),
     )
 
 
