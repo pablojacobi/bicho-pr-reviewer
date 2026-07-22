@@ -12,6 +12,7 @@ from bicho.application.analyzers.base import Analyzer
 from bicho.application.context import ReviewContext
 from bicho.application.graph.builder import run_graph
 from bicho.application.graph.state import ReviewState
+from bicho.application.verifier import FindingVerifier, PolicyVerifier
 from bicho.domain.models.review import ReviewOptions, ReviewRequest, ReviewResult, ReviewStatus
 from bicho.domain.ports.diff_parser import DiffParserPort
 from bicho.domain.ports.github import GitHubPort
@@ -31,6 +32,7 @@ class ReviewService:
         adapters: LanguageAdapterRegistry,
         analyzers: Mapping[str, Analyzer],
         ids: IdGenerator,
+        verifier: FindingVerifier | None = None,
         timeout_seconds: float | None = None,
     ) -> None:
         self._graph = graph
@@ -39,6 +41,7 @@ class ReviewService:
         self._adapters = adapters
         self._analyzers = analyzers
         self._ids = ids
+        self._verifier: FindingVerifier = verifier or PolicyVerifier()
         self._timeout_seconds = timeout_seconds
 
     async def run(self, request: ReviewRequest, options: ReviewOptions) -> ReviewResult:
@@ -48,6 +51,7 @@ class ReviewService:
             diff_parser=self._diff_parser,
             adapters=self._adapters,
             analyzers=self._analyzers,
+            verifier=self._verifier,
             options=options,
             correlation_id=self._ids.new_id(),
         )

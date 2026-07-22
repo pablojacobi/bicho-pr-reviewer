@@ -29,3 +29,12 @@ async def test_container_builds_and_caches_the_review_service() -> None:
 
     assert isinstance(first, ReviewService)
     assert first is second
+
+
+async def test_container_builds_the_llm_verifier_when_enabled() -> None:
+    settings = _settings().model_copy(update={"verifier_enabled": True})
+
+    async with httpx.AsyncClient() as http:
+        service = Container(settings, http=http).review_service()
+
+    assert isinstance(service, ReviewService)

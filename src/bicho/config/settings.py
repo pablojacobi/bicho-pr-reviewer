@@ -106,6 +106,9 @@ class Settings(BaseSettings):
     scanner: ScannerSettings = ScannerSettings()
     # Total wall-clock backstop for one review; it fails cleanly past this rather than hanging.
     review_timeout_seconds: float = 300.0
+    # When on, an extra batched model call verifies candidate findings to cut false positives (adds
+    # latency; degrades to the deterministic policy if the call fails).
+    verifier_enabled: bool = False
 
     @field_validator("log_level")
     @classmethod

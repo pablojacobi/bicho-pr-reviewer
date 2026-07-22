@@ -8,6 +8,7 @@ from bicho.application.analyzers.schemas import AnalyzerReport, RawFinding
 from bicho.application.context import ReviewContext
 from bicho.application.graph.builder import build_graph, run_graph
 from bicho.application.graph.state import ReviewState
+from bicho.application.verifier import PolicyVerifier
 from bicho.domain.models.analysis import AnalyzerOutcome, OutcomeStatus
 from bicho.domain.models.diff import FileChangeKind
 from bicho.domain.models.finding import Category, Confidence, Severity
@@ -68,6 +69,7 @@ def _context(github: GitHubPort, analyzers: Mapping[str, Analyzer]) -> ReviewCon
         diff_parser=DiffParser(),
         adapters=AdapterRegistry([], fallback=GenericAdapter()),
         analyzers=analyzers,
+        verifier=PolicyVerifier(),
         options=ReviewOptions(),
         correlation_id="c",
     )
