@@ -1,0 +1,25 @@
+# Run the whole reviewer locally with one command: `docker compose up --build`.
+#
+# There is no database, cache, or broker — Bicho is a single stateless service (that is the point;
+# see docs/adr/0003 and 0004). Copy .env.example to .env and fill in real credentials first.
+#
+# The manual endpoint works immediately: POST http://localhost:8000/reviews.
+# GitHub *webhooks* need a public URL — run a tunnel (cloudflared/ngrok) to localhost:8000 and set
+# that URL + the shared secret on the GitHub App, or deploy to Railway.
+services:
+  bicho:
+    build: .
+    image: bicho-pr-reviewer
+    env_file: .env
+    environment:
+      BICHO_ENVIRONMENT: ${BICHO_ENVIRONMENT:-production}
+      PORT: 8000
+    ports:
+      - "${BICHO_PORT:-8000}:8000"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/healthz')"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
