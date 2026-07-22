@@ -60,6 +60,7 @@ reportTypedDictNotRequiredAccess = false
 [[tool.pyright.executionEnvironments]]
 root = "tests"
 reportUnusedFunction = false
+reportPrivateUsage = false
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
