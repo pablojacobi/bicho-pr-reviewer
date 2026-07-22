@@ -27,6 +27,30 @@ deploy is the last remaining step.
   impact and a recommendation. Findings that can't be anchored to the diff go into the summary.
   Idempotency (a hidden marker) and a stale-head guard prevent duplicate or misplaced reviews.
 
+## Live demo
+
+Bicho runs live on Railway. Opening a pull request triggers an automatic review published by the
+`bicho-pr-reviewer[bot]` account. A real inline comment it posted, verbatim, on a PR that added a
+helper wrapping `subprocess.run(user_input, shell=True)`:
+
+> **[security · critical]** Command injection via subprocess with shell=True on user input
+>
+> The new `run_command` function passes `user_input` directly to `subprocess.run(..., shell=True)`.
+> When `shell=True` and the argument is a string, the value is interpreted by `/bin/sh -c`, so any
+> user-controlled string is executed as shell. An attacker can inject arbitrary commands via
+> metacharacters such as `;`, `&&`, `|`, backticks, or `$(...)`, leading to full RCE under the
+> process's privileges.
+>
+> **Impact:** Remote/local arbitrary command execution (RCE) …
+>
+> **Recommendation:** Do not use `shell=True` with user-controlled input. Pass a list of arguments …
+
+The same PR's review also flagged an `eval()` on user input, a missing timeout, absent test coverage,
+and (via pip-audit) known CVEs in a pinned dependency — one review, many anchored inline comments.
+
+> Replace the placeholders below with your own screenshots once you install the App on a repo:
+> a published review, its inline comments, and the LangSmith trace.
+
 ## Design highlights
 
 - **Single container, no database.** GitHub is the source of truth; idempotency via a hidden review
@@ -77,13 +101,16 @@ Webhooks need a public URL — expose `:8000` with a tunnel (cloudflared/ngrok) 
 - [ARCHITECTURE.md](ARCHITECTURE.md) — layers, the review pipeline, and diagrams.
 - [docs/adr/](docs/adr/) — architecture decision records (why it is shaped this way).
 - [docs/limitations.md](docs/limitations.md) — deliberate constraints, stated honestly.
+- [okf/](okf/) — the documentation as an [Open Knowledge Format](okf/README.md) bundle.
+- [CONTRIBUTING.md](CONTRIBUTING.md) · [SECURITY.md](SECURITY.md) · [CHANGELOG.md](CHANGELOG.md)
 
 ## Status
 
-The full pipeline is implemented and runs offline: GitHub App auth + client, the MiniMax provider,
-the six analyzers, both scanners, publishing with idempotency and stale-head guards, and the webhook +
-background runner — all at 100% coverage. **Remaining:** the live Railway deploy, a real installed
-GitHub App, and screenshots.
+**Deployed and running live on Railway.** The full pipeline works end to end: a GitHub App webhook
+triggers an automatic review that is published on the PR by `bicho-pr-reviewer[bot]` — GitHub App
+auth + client, an OpenAI-compatible model provider (multi-provider, with retry/concurrency knobs), the
+six analyzers, both scanners, publishing with idempotency and a stale-head guard, all at 100% line +
+branch coverage. Configuration is documented in [.env.example](.env.example).
 
 ## Acknowledgements
 
