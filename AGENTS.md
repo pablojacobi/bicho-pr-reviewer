@@ -24,11 +24,12 @@ src/bicho/
   config/                 Settings (pydantic-settings), Environment, structlog config.
   domain/                 Framework-free core: models, errors, ports (Protocols), pure services.
     ports/                The Protocols the rest of the system depends on.
-  infrastructure/         Adapters implementing the ports (clock, ids, subprocess, fs, and — later —
-                          github, model, scanners, diff, language).
-  application/            (arrives Phase 3+) The ReviewService use case and the LangGraph workflow.
-tests/                    unit/ · property/ · integration/ · e2e/ ; conftest holds shared fixtures.
-resources/semgrep/        (arrives Phase 4) curated local Semgrep rules shipped in-repo.
+  infrastructure/         Adapters implementing the ports (clock, ids, subprocess, fs, github, model,
+                          scanners, diff, language).
+  application/            The ReviewService use case, the LangGraph workflow, and the LLM analyzers.
+  api/                    FastAPI app + lifespan, the Container, /reviews, /webhooks/github, health.
+tests/                    unit/ · property/ · e2e/ ; conftest holds shared fixtures.
+resources/semgrep/        Curated local Semgrep rules shipped in-repo.
 docs/                     Architecture, ADRs, and per-topic guides (grow with the code).
 ```
 

@@ -11,19 +11,21 @@
 > positives, and publishes a **single** GitHub Review: an executive summary plus multiple **inline
 > comments** anchored to the exact file/line/range.
 
-🚧 **Under active construction.** This repository is being built in the open, phase by phase, with
-strict TDD and 100% line + branch coverage. It is not yet functional.
+Built in the open, phase by phase, with strict TDD and **100% line + branch coverage**. The full
+review pipeline runs end to end **offline** (fakes + RESPX, no credentials, no network); the live
+deploy is the last remaining step.
 
-## What it will do
+## What it does
 
-- Trigger automatically on a GitHub App **webhook** (PR opened / reopened / synchronize / ready for
-  review) and run the analysis as an in-process background task — or on demand via a **manual API
-  endpoint** with `dry_run`.
-- Route the diff through a typed **LangGraph** workflow with fan-out/fan-in over deterministic
-  scanners and specialized analyzers (correctness, security, performance, maintainability, tests,
-  contracts), then an **evidence verifier** that reduces false positives.
-- Publish one GitHub Review with inline comments — each with category, severity, explanation, impact
-  and a recommendation. Findings that can't be anchored to the diff go into the summary.
+- Triggers automatically on a GitHub App **webhook** (PR opened / reopened / synchronize / ready for
+  review) and runs the analysis as an in-process background task — or on demand via a **manual API
+  endpoint** (`POST /reviews`) with `dry_run` to preview the review without posting.
+- Routes the diff through a typed **LangGraph** workflow with fan-out/fan-in over deterministic
+  scanners (**Semgrep CE**, **pip-audit**) and six specialized LLM analyzers (correctness, security,
+  performance, maintainability, tests, contracts), then a **verifier** that reduces false positives.
+- Publishes **one** GitHub Review with inline comments — each with category, severity, explanation,
+  impact and a recommendation. Findings that can't be anchored to the diff go into the summary.
+  Idempotency (a hidden marker) and a stale-head guard prevent duplicate or misplaced reviews.
 
 ## Design highlights
 
@@ -40,19 +42,37 @@ Python 3.14 · FastAPI · Pydantic v2 · LangChain / LangGraph v1 · MiniMax-M3 
 Semgrep Community Edition · pip-audit · uv · pytest + Hypothesis + RESPX · Ruff · Pyright · Docker ·
 Railway.
 
+## Run it locally
+
+```bash
+uv sync                        # install (Python 3.14)
+uv run pytest                  # full suite, 100% line + branch, no network/credentials
+uv run uvicorn bicho.api.app:create_app --factory   # serve; open /docs for Swagger
+```
+
+Preview a review without posting (no credentials needed to see the shape of the request/response):
+
+```bash
+curl -X POST localhost:8000/reviews \
+  -H 'content-type: application/json' \
+  -d '{"repository": "octo/hello-world", "pr_number": 42, "dry_run": true}'
+```
+
+Configuration is via `BICHO_*` environment variables — see [.env.example](.env.example).
+
 ## Documentation
 
 - [AGENTS.md](AGENTS.md) — contributor/agent guide and the source of truth for how this repo is built.
-- [ARCHITECTURE.md](ARCHITECTURE.md) — layers, the target review pipeline, and diagrams.
+- [ARCHITECTURE.md](ARCHITECTURE.md) — layers, the review pipeline, and diagrams.
 - [docs/adr/](docs/adr/) — architecture decision records (why it is shaped this way).
 - [docs/limitations.md](docs/limitations.md) — deliberate constraints, stated honestly.
 
 ## Status
 
-Phase 1 (foundation) is essentially complete: tooling and CI enforcing 100% coverage, the injectable
-system primitives, a working non-root container, and the documentation above. Next is the offline test
-harness (Phase 2), then the manual review vertical slice. A live demo and screenshots land in the
-final phase.
+The full pipeline is implemented and runs offline: GitHub App auth + client, the MiniMax provider,
+the six analyzers, both scanners, publishing with idempotency and stale-head guards, and the webhook +
+background runner — all at 100% coverage. **Remaining:** the live Railway deploy, a real installed
+GitHub App, and screenshots.
 
 ## Acknowledgements
 
