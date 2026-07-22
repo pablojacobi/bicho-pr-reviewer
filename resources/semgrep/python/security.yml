@@ -1,0 +1,27 @@
+rules:
+  - id: python-eval-on-input
+    languages: [python]
+    severity: ERROR
+    message: >-
+      Avoid eval() on request- or user-derived data; it enables arbitrary code execution.
+      Use ast.literal_eval or an explicit parser instead.
+    patterns:
+      - pattern: eval(...)
+
+  - id: python-subprocess-shell-true
+    languages: [python]
+    severity: ERROR
+    message: >-
+      Passing shell=True to subprocess with a dynamic command allows shell injection.
+      Pass an argument list and keep shell=False.
+    patterns:
+      - pattern: subprocess.$FUNC(..., shell=True, ...)
+
+  - id: python-yaml-unsafe-load
+    languages: [python]
+    severity: WARNING
+    message: >-
+      yaml.load without a SafeLoader can construct arbitrary Python objects. Use yaml.safe_load.
+    patterns:
+      - pattern: yaml.load(...)
+      - pattern-not: yaml.load(..., Loader=yaml.SafeLoader)

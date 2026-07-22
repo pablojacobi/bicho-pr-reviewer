@@ -16,6 +16,7 @@ _CORE_ANALYZERS = (
     "maintainability",
     "tests",
     "contracts",
+    "semgrep",
 )
 
 
