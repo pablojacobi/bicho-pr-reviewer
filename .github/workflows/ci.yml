@@ -18,9 +18,9 @@ jobs:
     name: Lint, types, tests, coverage
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v7
         with:
           version: "0.11.8"
           enable-cache: true
@@ -39,7 +39,7 @@ jobs:
           uv run python -c "from bicho.api.app import create_app; create_app()"
           uv run python -c "import json; from bicho.api.app import create_app; json.dumps(create_app().openapi())"
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v7
         with:
           files: coverage.xml
           fail_ci_if_error: false
@@ -49,9 +49,9 @@ jobs:
     name: Dependency audit (pip-audit)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Install uv
-        uses: astral-sh/setup-uv@v5
+        uses: astral-sh/setup-uv@v7
         with:
           version: "0.11.8"
       - name: Export locked dependencies
@@ -63,6 +63,6 @@ jobs:
     name: Docker build smoke
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Build image
         run: docker build --tag bicho-pr-reviewer:ci .
