@@ -11,8 +11,8 @@ from typing import Annotated, Self
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
 
-from bicho.api.deps import get_review_service
-from bicho.application.review_service import ReviewService
+from bicho.api.container import Container
+from bicho.api.deps import get_container
 from bicho.domain.models.finding import Category
 from bicho.domain.models.review import (
     ReviewDraft,
@@ -62,7 +62,7 @@ class ReviewResultResponse(BaseModel):
 @router.post("/reviews", summary="Run a review for a pull request")
 async def create_review(
     body: ReviewRequestBody,
-    service: Annotated[ReviewService, Depends(get_review_service)],
+    container: Annotated[Container, Depends(get_container)],
 ) -> ReviewResultResponse:
     """Run the review pipeline for one pull request and return the result (dry-run by default)."""
     request = ReviewRequest(
@@ -77,5 +77,5 @@ async def create_review(
         focus=body.focus,
         categories=body.categories,
     )
-    result = await service.run(request, options)
+    result = await container.review_service(body.installation_id).run(request, options)
     return ReviewResultResponse.of(result)

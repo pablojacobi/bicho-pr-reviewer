@@ -46,7 +46,8 @@ src = ["src", "tests"]
 select = ["E", "F", "I", "UP", "B", "SIM", "C4", "PTH", "ASYNC", "RUF", "S"]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/**" = ["S101"] # assert is the point of a test
+# assert is the point of a test; S105/S106 are dummy secrets used to sign fixture payloads.
+"tests/**" = ["S101", "S105", "S106"]
 
 [tool.pyright]
 include = ["src", "tests"]
