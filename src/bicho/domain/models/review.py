@@ -97,6 +97,7 @@ class ReviewStatus(StrEnum):
     DRY_RUN = "dry_run"
     COMPLETED = "completed"
     SKIPPED = "skipped"
+    STALE = "stale"
     FAILED = "failed"
 
 
@@ -109,3 +110,4 @@ class ReviewResult(BaseModel):
     draft: ReviewDraft | None = None
     confirmed_count: int = 0
     total_count: int = 0
+    review_id: int | None = None

@@ -19,10 +19,15 @@ from bicho.application.graph.nodes import (
     detect_language,
     fetch_changed_files,
     fetch_pull_request,
+    idempotency_guard,
     make_analyzer_node,
     normalize_diff,
+    publish_github_review,
+    route_after_idempotency,
+    route_after_stale,
     route_analyzers,
     select_analyzers,
+    stale_head_guard,
     verify_findings,
 )
 from bicho.application.graph.state import ReviewState
@@ -41,6 +46,9 @@ def build_graph(analyzer_names: Sequence[str]):
     builder.add_node("collect_findings", collect_findings)
     builder.add_node("verify_findings", verify_findings)
     builder.add_node("compose_review", compose_review)
+    builder.add_node("idempotency_guard", idempotency_guard)
+    builder.add_node("stale_head_guard", stale_head_guard)
+    builder.add_node("publish_github_review", publish_github_review)
 
     builder.add_edge(START, "fetch_pull_request")
     builder.add_edge("fetch_pull_request", "fetch_changed_files")
@@ -54,7 +62,14 @@ def build_graph(analyzer_names: Sequence[str]):
         builder.add_edge(name, "collect_findings")
     builder.add_edge("collect_findings", "verify_findings")
     builder.add_edge("verify_findings", "compose_review")
-    builder.add_edge("compose_review", END)
+    builder.add_edge("compose_review", "idempotency_guard")
+    builder.add_conditional_edges(
+        "idempotency_guard", route_after_idempotency, ["stale_head_guard", END]
+    )
+    builder.add_conditional_edges(
+        "stale_head_guard", route_after_stale, ["publish_github_review", END]
+    )
+    builder.add_edge("publish_github_review", END)
     return builder.compile()
 
 

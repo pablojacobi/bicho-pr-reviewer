@@ -45,6 +45,7 @@ class ReviewResultResponse(BaseModel):
     confirmed_count: int
     total_count: int
     draft: ReviewDraft | None = None
+    review_id: int | None = None
 
     @classmethod
     def of(cls, result: ReviewResult) -> Self:
@@ -54,6 +55,7 @@ class ReviewResultResponse(BaseModel):
             confirmed_count=result.confirmed_count,
             total_count=result.total_count,
             draft=result.draft,
+            review_id=result.review_id,
         )
 
 
