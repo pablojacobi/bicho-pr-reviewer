@@ -104,6 +104,8 @@ class Settings(BaseSettings):
     github: GitHubSettings = GitHubSettings()
     llm: LLMSettings = LLMSettings()
     scanner: ScannerSettings = ScannerSettings()
+    # Total wall-clock backstop for one review; it fails cleanly past this rather than hanging.
+    review_timeout_seconds: float = 300.0
 
     @field_validator("log_level")
     @classmethod
