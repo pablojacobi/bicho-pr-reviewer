@@ -11,7 +11,7 @@ from collections.abc import Mapping
 import httpx
 
 from bicho.application.analyzers.base import Analyzer
-from bicho.application.analyzers.correctness import build_correctness_analyzer
+from bicho.application.analyzers.registry import build_analyzers
 from bicho.application.graph.builder import build_graph
 from bicho.application.review_service import ReviewService
 from bicho.config.settings import Settings
@@ -99,4 +99,4 @@ class Container:
         )
 
     def _analyzers(self, model: ModelProvider) -> Mapping[str, Analyzer]:
-        return {"correctness": build_correctness_analyzer(model=model, ids=self._ids)}
+        return build_analyzers(model=model, ids=self._ids)
