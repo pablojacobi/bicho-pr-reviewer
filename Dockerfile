@@ -13,14 +13,14 @@ WORKDIR /app
 
 # Dependencies first (cached independently of source changes), without the project itself.
 COPY pyproject.toml uv.lock ./
-RUN --mount=type=cache,target=/root/.cache/uv \
+RUN \
     uv sync --frozen --no-install-project --no-dev
 
 # Then the project source and the shipped Semgrep rules.
 COPY src ./src
 COPY resources ./resources
 COPY README.md ./
-RUN --mount=type=cache,target=/root/.cache/uv \
+RUN \
     uv sync --frozen --no-dev
 
 # ---- runtime: minimal, non-root ----
@@ -34,7 +34,7 @@ COPY --from=ghcr.io/astral-sh/uv:0.11.8 /uv /uvx /bin/
 ENV UV_TOOL_DIR=/opt/uv/tools \
     UV_TOOL_BIN_DIR=/usr/local/bin \
     UV_PYTHON_DOWNLOADS=never
-RUN --mount=type=cache,target=/root/.cache/uv \
+RUN \
     uv tool install "semgrep==1.170.1" && \
     uv tool install "pip-audit"
 
