@@ -3,13 +3,17 @@
 from pydantic import SecretStr
 
 from bicho.config.readiness import missing_requirements
-from bicho.config.settings import GitHubSettings, LLMSettings, Settings
+from bicho.config.settings import GitHubSettings, LLMSettings, ProviderSpec, Settings
 
 
 def _ready_settings() -> Settings:
     return Settings(
         github=GitHubSettings(app_id="1", private_key=SecretStr("key"), installation_id=7),
-        llm=LLMSettings(api_key=SecretStr("k")),
+        llm=LLMSettings(
+            providers={
+                "minimax": ProviderSpec(api_key=SecretStr("k"), base_url="https://x/v1", model="m")
+            }
+        ),
     )
 
 
@@ -24,4 +28,15 @@ def test_empty_configuration_reports_every_missing_requirement() -> None:
     assert any("app_id" in problem for problem in problems)
     assert any("private_key" in problem for problem in problems)
     assert any("installation_id" in problem for problem in problems)
-    assert any("llm.api_key" in problem for problem in problems)
+    assert any("llm" in problem for problem in problems)
+
+
+def test_incomplete_active_provider_is_reported() -> None:
+    settings = Settings(
+        github=GitHubSettings(app_id="1", private_key=SecretStr("key"), installation_id=7),
+        llm=LLMSettings(providers={"minimax": ProviderSpec(api_key=SecretStr("k"))}),
+    )
+
+    problems = missing_requirements(settings)
+
+    assert any("missing api_key/base_url/model" in problem for problem in problems)
