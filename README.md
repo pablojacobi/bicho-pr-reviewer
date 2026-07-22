@@ -48,8 +48,17 @@ helper wrapping `subprocess.run(user_input, shell=True)`:
 The same PR's review also flagged an `eval()` on user input, a missing timeout, absent test coverage,
 and (via pip-audit) known CVEs in a pinned dependency — one review, many anchored inline comments.
 
-> Replace the placeholders below with your own screenshots once you install the App on a repo:
-> a published review, its inline comments, and the LangSmith trace.
+### Bicho reviewing its own pull requests
+
+The App is installed on this very repository, so Bicho reviews its own PRs. On a refactor of the
+Semgrep finding id, it flagged — unprompted — that changing the fingerprint inputs would break
+cross-run deduplication, calling it a *"silent, deployment-time regression in incremental-scan
+behavior."* That is a correct, senior-level observation about the change under review:
+
+![Bicho reviewing its own pull request](docs/images/self-review-pr49.png)
+
+See the [architecture diagrams](docs/diagrams.md) for the LangGraph workflow, the model-provider
+abstraction, the webhook flow, and LangSmith tracing.
 
 ## Design highlights
 
