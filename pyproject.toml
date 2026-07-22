@@ -8,6 +8,8 @@ license = "MIT"
 authors = [{ name = "Pablo Jacobi" }]
 dependencies = [
     "fastapi>=0.139,<0.140",
+    "pydantic-settings>=2.14,<3",
+    "structlog>=26,<27",
     "uvicorn[standard]>=0.51,<0.52",
 ]
 
@@ -44,6 +46,12 @@ include = ["src", "tests"]
 pythonVersion = "3.14"
 typeCheckingMode = "strict"
 reportMissingTypeStubs = false
+
+# Pytest fixtures/helpers are invoked by pytest, not referenced in code, so static analysis reports
+# them as unused. Relax that single rule for the tests tree only; src stays fully strict.
+[[tool.pyright.executionEnvironments]]
+root = "tests"
+reportUnusedFunction = false
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
