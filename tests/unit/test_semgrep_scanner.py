@@ -76,6 +76,21 @@ async def test_maps_results_to_findings() -> None:
     assert finding.end_line == 12
 
 
+async def test_strips_namespaced_rule_id_to_the_rule_name() -> None:
+    namespaced = (
+        b'{"results": [{"check_id": "app.resources.semgrep.python.python-eval-on-input", '
+        b'"path": "app/db.py", "start": {"line": 11}, "end": {"line": 11}, '
+        b'"extra": {"message": "m", "severity": "ERROR"}}]}'
+    )
+    outcome = await _scanner(_process(stdout=namespaced)).analyze(
+        _context({"app/db.py": "eval(x)\n"})
+    )
+
+    finding = outcome.findings[0]
+    assert finding.subcategory == "python-eval-on-input"
+    assert finding.title == "Semgrep: python-eval-on-input"
+
+
 async def test_empty_results_is_zero_findings() -> None:
     outcome = await _scanner(_process(stdout=b'{"results": []}')).analyze(
         _context({"app/db.py": "x = 1\n"})
