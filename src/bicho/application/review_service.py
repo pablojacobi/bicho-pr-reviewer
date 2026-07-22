@@ -39,7 +39,7 @@ class ReviewService:
         self._ids = ids
 
     async def run(self, request: ReviewRequest, options: ReviewOptions) -> ReviewResult:
-        """Run the full review pipeline and return its result (dry-run until publishing lands)."""
+        """Run the full review pipeline: analyze, compose, and (unless dry-run) publish."""
         context = ReviewContext(
             github=self._github,
             diff_parser=self._diff_parser,
@@ -53,8 +53,9 @@ class ReviewService:
         findings = final.get("findings", [])
         confirmed = sum(1 for finding in findings if finding.is_confirmed)
         return ReviewResult(
-            status=ReviewStatus.DRY_RUN,
+            status=final.get("decision", ReviewStatus.DRY_RUN),
             draft=final.get("review_draft"),
             confirmed_count=confirmed,
             total_count=len(findings),
+            review_id=final.get("published_review_id"),
         )

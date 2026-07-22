@@ -11,7 +11,7 @@ from bicho.domain.models.analysis import AnalyzerOutcome
 from bicho.domain.models.diff import NormalizedDiff
 from bicho.domain.models.finding import Finding
 from bicho.domain.models.pull_request import ChangedFile, PullRequest
-from bicho.domain.models.review import ReviewDraft, ReviewRequest
+from bicho.domain.models.review import ReviewDraft, ReviewRequest, ReviewStatus
 from bicho.domain.ports.language_adapter import LanguageAdapter
 
 
@@ -30,3 +30,6 @@ class ReviewState(TypedDict):
     selected: NotRequired[list[str]]
     findings: NotRequired[list[Finding]]
     review_draft: NotRequired[ReviewDraft]
+    # Set by the publish guards/node: the terminal outcome, and the id of a published review.
+    decision: NotRequired[ReviewStatus]
+    published_review_id: NotRequired[int]

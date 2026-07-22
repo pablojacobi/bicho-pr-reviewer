@@ -66,7 +66,9 @@ async def test_review_service_runs_end_to_end_and_returns_a_result() -> None:
 
     result = await service.run(ReviewRequest(repository="o/r", pr_number=1), ReviewOptions())
 
-    assert result.status is ReviewStatus.DRY_RUN
+    assert result.status is ReviewStatus.COMPLETED
+    assert result.review_id is not None
+    assert len(github.published) == 1
     assert result.total_count == 2
     assert result.confirmed_count == 1
     assert result.draft is not None

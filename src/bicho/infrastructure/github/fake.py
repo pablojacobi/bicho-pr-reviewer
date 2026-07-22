@@ -20,16 +20,24 @@ class FakeGitHub:
         pull_request: PullRequest | None = None,
         changed_files: Sequence[ChangedFile] = (),
         reviews: Sequence[ExistingReview] = (),
+        moved_head_sha: str | None = None,
     ) -> None:
         self._pull_request = pull_request
         self._changed_files = tuple(changed_files)
         self._reviews = tuple(reviews)
+        # When set, the second and later fetches report this head SHA, simulating a push that
+        # lands between analysis and publishing (exercises the stale-head guard).
+        self._moved_head_sha = moved_head_sha
+        self._fetch_count = 0
         self.published: list[ReviewDraft] = []
         self._next_review_id = 1000
 
     async def fetch_pull_request(self, repository: str, number: int) -> PullRequest:
         if self._pull_request is None:
             raise PullRequestNotFoundError(f"{repository}#{number}")
+        self._fetch_count += 1
+        if self._moved_head_sha is not None and self._fetch_count > 1:
+            return self._pull_request.model_copy(update={"head_sha": self._moved_head_sha})
         return self._pull_request
 
     async def fetch_changed_files(self, repository: str, number: int) -> tuple[ChangedFile, ...]:
