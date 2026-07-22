@@ -23,6 +23,14 @@ class GitHubSettings(BaseModel):
     api_base: str = "https://api.github.com"
     webhook_secret: SecretStr = SecretStr("")
 
+    @field_validator("private_key", mode="before")
+    @classmethod
+    def _restore_pem_newlines(cls, value: object) -> object:
+        r"""Turn literal ``\n`` in an env-provided single-line PEM back into real newlines."""
+        if isinstance(value, str):
+            return value.replace("\\n", "\n")
+        return value
+
 
 class LLMSettings(BaseModel):
     """Model endpoint configuration (env: ``BICHO_LLM__*``).

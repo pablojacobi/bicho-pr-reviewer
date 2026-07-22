@@ -1,10 +1,10 @@
 """Tests for application settings loading and validation."""
 
 import pytest
-from pydantic import ValidationError
+from pydantic import SecretStr, ValidationError
 
 from bicho.config.environment import Environment
-from bicho.config.settings import Settings
+from bicho.config.settings import GitHubSettings, Settings
 
 
 def test_defaults_are_local_and_non_json() -> None:
@@ -37,3 +37,17 @@ def test_invalid_log_level_is_rejected() -> None:
 def test_explicit_json_logs_override_the_environment_default() -> None:
     assert Settings(json_logs=True).render_json_logs is True
     assert Settings(environment=Environment.PRODUCTION, json_logs=False).render_json_logs is False
+
+
+def test_github_private_key_restores_escaped_newlines(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("BICHO_GITHUB__PRIVATE_KEY", "-----BEGIN-----\\nBODY\\n-----END-----")
+
+    settings = Settings()
+
+    assert settings.github.private_key.get_secret_value() == "-----BEGIN-----\nBODY\n-----END-----"
+
+
+def test_github_private_key_keeps_real_newlines_unchanged() -> None:
+    github = GitHubSettings(private_key=SecretStr("line1\nline2"))
+
+    assert github.private_key.get_secret_value() == "line1\nline2"
