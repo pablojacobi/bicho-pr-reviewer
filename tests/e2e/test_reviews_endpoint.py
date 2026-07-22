@@ -41,7 +41,7 @@ def _settings() -> Settings:
             app_id="1", private_key=SecretStr(_KEY), installation_id=7, api_base=_GH
         ),
         llm=LLMSettings(api_key=SecretStr("k"), base_url=_LLM, model="MiniMax-M3"),
-        scanner=ScannerSettings(semgrep_enabled=False),
+        scanner=ScannerSettings(semgrep_enabled=False, pip_audit_enabled=False),
     )
 
 

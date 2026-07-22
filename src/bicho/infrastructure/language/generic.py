@@ -17,6 +17,7 @@ _CORE_ANALYZERS = (
     "tests",
     "contracts",
     "semgrep",
+    "pip-audit",
 )
 
 
