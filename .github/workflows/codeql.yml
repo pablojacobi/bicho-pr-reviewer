@@ -25,7 +25,10 @@ jobs:
         uses: github/codeql-action/init@v4
         with:
           languages: python
-          queries: security-and-quality
+          # security-extended, not security-and-quality: Ruff + Pyright already enforce code quality,
+          # so CodeQL here focuses on security. This also avoids quality-query false positives such as
+          # "statement has no effect" on idiomatic Protocol `...` stub bodies.
+          queries: security-extended
       - name: Perform CodeQL analysis
         uses: github/codeql-action/analyze@v4
         with:
