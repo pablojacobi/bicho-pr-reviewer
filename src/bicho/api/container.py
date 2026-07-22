@@ -78,6 +78,7 @@ class Container:
             adapters=AdapterRegistry([PythonAdapter()], fallback=GenericAdapter()),
             analyzers=analyzers,
             ids=self._ids,
+            timeout_seconds=self._settings.review_timeout_seconds,
         )
 
     def _github(self, installation_id: int) -> GitHubClient:
