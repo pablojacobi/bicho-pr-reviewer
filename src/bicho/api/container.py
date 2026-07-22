@@ -27,6 +27,7 @@ from bicho.infrastructure.language.generic import GenericAdapter
 from bicho.infrastructure.language.registry import AdapterRegistry
 from bicho.infrastructure.model.registry import ModelSpec, build_model_provider
 from bicho.infrastructure.process.subprocess_runner import AsyncSubprocessRunner
+from bicho.infrastructure.scanners.pip_audit_runner import build_dependency_audit_scanner
 from bicho.infrastructure.scanners.semgrep_runner import build_semgrep_scanner
 
 
@@ -115,5 +116,12 @@ class Container:
                 ids=self._ids,
                 config=scanner.semgrep_config,
                 timeout_seconds=scanner.semgrep_timeout_seconds,
+            )
+        if scanner.pip_audit_enabled:
+            analyzers["pip-audit"] = build_dependency_audit_scanner(
+                runner=self._runner,
+                workspace=self._workspace,
+                ids=self._ids,
+                timeout_seconds=scanner.pip_audit_timeout_seconds,
             )
         return analyzers

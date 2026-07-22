@@ -48,7 +48,7 @@ def _settings() -> Settings:
             webhook_secret=SecretStr(_SECRET),
         ),
         llm=LLMSettings(api_key=SecretStr("k"), base_url=_LLM, model="MiniMax-M3"),
-        scanner=ScannerSettings(semgrep_enabled=False),
+        scanner=ScannerSettings(semgrep_enabled=False, pip_audit_enabled=False),
     )
 
 

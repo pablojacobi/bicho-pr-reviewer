@@ -46,6 +46,9 @@ class ScannerSettings(BaseModel):
     semgrep_enabled: bool = True
     semgrep_config: str = "resources/semgrep"
     semgrep_timeout_seconds: float = 60.0
+    # pip-audit queries a vulnerability database over the network; disable it when offline.
+    pip_audit_enabled: bool = True
+    pip_audit_timeout_seconds: float = 60.0
 
 
 class Settings(BaseSettings):
