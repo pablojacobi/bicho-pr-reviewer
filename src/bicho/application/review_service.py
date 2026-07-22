@@ -4,6 +4,7 @@ Both paths call ``run``; the only per-path difference is the ``ReviewOptions`` (
 categories) and the trigger recorded on the request. There is no duplicated orchestration.
 """
 
+import asyncio
 from collections.abc import Mapping
 from typing import Any
 
@@ -30,6 +31,7 @@ class ReviewService:
         adapters: LanguageAdapterRegistry,
         analyzers: Mapping[str, Analyzer],
         ids: IdGenerator,
+        timeout_seconds: float | None = None,
     ) -> None:
         self._graph = graph
         self._github = github
@@ -37,6 +39,7 @@ class ReviewService:
         self._adapters = adapters
         self._analyzers = analyzers
         self._ids = ids
+        self._timeout_seconds = timeout_seconds
 
     async def run(self, request: ReviewRequest, options: ReviewOptions) -> ReviewResult:
         """Run the full review pipeline: analyze, compose, and (unless dry-run) publish."""
@@ -49,7 +52,14 @@ class ReviewService:
             correlation_id=self._ids.new_id(),
         )
         initial: ReviewState = {"request": request, "outcomes": []}
-        final = await run_graph(self._graph, initial, context)
+        try:
+            final = await asyncio.wait_for(
+                run_graph(self._graph, initial, context), self._timeout_seconds
+            )
+        except TimeoutError:
+            # A total-run backstop: the review exceeded its deadline (e.g. a slow/flaky model). End
+            # cleanly as FAILED rather than hanging a background task; the next event can retry.
+            return ReviewResult(status=ReviewStatus.FAILED)
         findings = final.get("findings", [])
         confirmed = sum(1 for finding in findings if finding.is_confirmed)
         return ReviewResult(

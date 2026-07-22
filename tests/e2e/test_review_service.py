@@ -1,5 +1,6 @@
 """Service-level end-to-end test for ReviewService (offline, on fakes)."""
 
+import asyncio
 from collections.abc import Mapping
 
 from bicho.application.analyzers.base import Analyzer
@@ -73,3 +74,24 @@ async def test_review_service_runs_end_to_end_and_returns_a_result() -> None:
     assert result.confirmed_count == 1
     assert result.draft is not None
     assert len(result.draft.inline_comments) == 1
+
+
+async def test_run_fails_cleanly_when_it_exceeds_the_deadline() -> None:
+    class _SlowGraph:
+        async def ainvoke(self, initial: object, *, context: object) -> dict[str, object]:
+            await asyncio.sleep(1)
+            return {}
+
+    service = ReviewService(
+        graph=_SlowGraph(),
+        github=FakeGitHub(),
+        diff_parser=DiffParser(),
+        adapters=AdapterRegistry([], fallback=GenericAdapter()),
+        analyzers={},
+        ids=UuidGenerator(),
+        timeout_seconds=0.01,
+    )
+
+    result = await service.run(ReviewRequest(repository="o/r", pr_number=1), ReviewOptions())
+
+    assert result.status is ReviewStatus.FAILED
