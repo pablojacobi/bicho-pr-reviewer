@@ -9,11 +9,15 @@
 > Automated GitHub Pull Request review agent — it gathers PR context, runs deterministic scanners
 > (Semgrep CE, pip-audit) plus LLM-based specialized analyzers, **verifies** findings to cut false
 > positives, and publishes a **single** GitHub Review: an executive summary plus multiple **inline
-> comments** anchored to the exact file/line/range.
+> comments** anchored to the exact file/line/range. *(bicho — Spanish for "critter".)*
+
+Two kinds of review in one pass: deterministic scanners catch the *known* (CVEs, injection
+patterns), specialized LLM analyzers catch the *contextual* — and a verifier gate keeps either
+from posting noise. A reviewer that confidently invents problems is worse than none.
 
 Built in the open, phase by phase, with strict TDD and **100% line + branch coverage**. The full
-review pipeline runs end to end **offline** (fakes + RESPX, no credentials, no network); the live
-deploy is the last remaining step.
+review pipeline runs end to end **offline** (fakes + RESPX, no credentials, no network) — and it
+runs live on Railway as a GitHub App.
 
 ## What it does
 
@@ -26,6 +30,42 @@ deploy is the last remaining step.
 - Publishes **one** GitHub Review with inline comments — each with category, severity, explanation,
   impact and a recommendation. Findings that can't be anchored to the diff go into the summary.
   Idempotency (a hidden marker) and a stale-head guard prevent duplicate or misplaced reviews.
+
+## The pipeline
+
+A linear spine fans out into one parallel superstep (six LLM analyzers + two deterministic
+scanners), fans back in via `operator.add` reducers, then a gated publish tail. Every fan-out
+node degrades to a diagnostic instead of raising, so one failure never rolls back the superstep.
+
+```mermaid
+flowchart TD
+    START([START]) --> FP[fetch_pull_request] --> FC[fetch_changed_files]
+    FC --> ND[normalize_diff] --> DL[detect_language] --> GF[gather_file_contents] --> SA[select_analyzers]
+    SA -. selected subset .-> COR[correctness]
+    SA -.-> SEC[security]
+    SA -.-> PER[performance]
+    SA -.-> MAI[maintainability]
+    SA -.-> TES[tests]
+    SA -.-> CON[contracts]
+    SA -.-> SG[semgrep]
+    SA -.-> PA[pip-audit]
+    COR & SEC & PER & MAI & TES & CON & SG & PA --> CF[collect_findings]
+    CF --> VF[verify_findings] --> CR[compose_review] --> IG{idempotency_guard}
+    IG -- dry-run / already reviewed --> DONE([END])
+    IG -- proceed --> SH{stale_head_guard}
+    SH -- head moved --> DONE
+    SH -- unchanged --> PUB[publish_github_review] --> DONE
+    subgraph fanout [parallel superstep: resilient, degrade-not-raise]
+        COR
+        SEC
+        PER
+        MAI
+        TES
+        CON
+        SG
+        PA
+    end
+```
 
 ## Live demo
 
@@ -64,9 +104,11 @@ abstraction, the webhook flow, and LangSmith tracing.
 
 - **Single container, no database.** GitHub is the source of truth; idempotency via a hidden review
   marker keyed on the head SHA. Deliberately cheap, single-instance, honestly documented limitations.
-- **Language-agnostic core** behind a Language Adapter contract (first adapter: Python/FastAPI).
-- **MiniMax-M3** via LangChain's OpenAI-compatible client, behind a provider registry — swap models
-  without touching the domain. **LangSmith** for tracing and evals.
+- **Language-agnostic core** behind a Language Adapter contract (first adapter: Python, `ast`-based).
+- **Any OpenAI-compatible model** (MiniMax, Gemini, …) via LangChain, behind a provider port and a
+  multi-provider registry — swap or add models by config, without touching the domain.
+- **LangSmith tracing.** Every model call is tagged with its role, prompt version, and correlation
+  id, so a review's calls are grouped and inspectable; force-off in tests.
 - **Deterministic, offline test suite** — no credentials, no network, no real services.
 
 ## Tech
